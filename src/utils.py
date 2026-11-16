@@ -26,7 +26,7 @@ def ensure_data_directories(base_data_dir: str | Path, dataset_id: str) -> dict:
         'extracted_swc': dataset_dir / "extracted_swc",
         'swc_skel': dataset_dir / "extracted_swc" / "SWC_Skel",
         'syn': dataset_dir / "extracted_swc" / "syn",
-        'interim_results': dataset_dir / "intirim_results"
+        'interim_results': dataset_dir / "interim_results"
     }
     
     # Create all directories

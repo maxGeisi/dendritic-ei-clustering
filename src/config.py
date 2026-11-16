@@ -1,6 +1,8 @@
 from pathlib import Path
 import yaml
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from .prep import DEFAULT_EXCITATORY_PRE_TYPES, DEFAULT_INHIBITORY_PRE_TYPES
 
 @dataclass
 class VoxelNM:
@@ -27,6 +29,14 @@ class Analysis:
     distance_mapping: bool
 
 @dataclass
+class EILabels:
+    """How synapses are labelled E or I. See prep.assign_e_i_labels."""
+    excitatory_flag: int = 0
+    pre_type_override: bool = True
+    inhibitory_pre_types: list = field(default_factory=lambda: list(DEFAULT_INHIBITORY_PRE_TYPES))
+    excitatory_pre_types: list = field(default_factory=lambda: list(DEFAULT_EXCITATORY_PRE_TYPES))
+
+@dataclass
 class Output:
     figures_dir: str
 
@@ -38,6 +48,7 @@ class Config:
     voxel_nm: VoxelNM
     analysis: Analysis
     output: Output
+    ei_labels: EILabels = field(default_factory=EILabels)
 
 def load_config(path: str | Path = "config/default.yaml") -> Config:
     with open(path, "r") as f:
@@ -50,4 +61,5 @@ def load_config(path: str | Path = "config/default.yaml") -> Config:
         voxel_nm=VoxelNM(**y["voxel_nm"]),
         analysis=Analysis(**y["analysis"]),
         output=Output(**y["output"]),
+        ei_labels=EILabels(**y.get("ei_labels", {})),
     )

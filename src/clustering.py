@@ -1,4 +1,4 @@
-# src/cluster.py
+# src/clustering.py
 from __future__ import annotations
 from typing import Dict, Iterable, List
 import numpy as np
@@ -37,14 +37,14 @@ def get_local_maximum(neuron_skel,
                       calculation_nodes: pd.DataFrame,
                       synapse_nodes: Iterable[int]) -> Dict[int, int]:
     """
-    EXACT behavior of your notebook:
+    Gradient ascent on the density field, restricted to the skeleton graph.
     For each start node in synapse_nodes, repeatedly move to the neighbor with the
     HIGHEST density if that neighbor's density is strictly greater than current.
     Stop when no neighbor is strictly higher → local maximum (peak).
 
     Returns: dict { start_node_id -> peak_node_id }.
     """
-    # navis skeleton graph; keep it undirected like your code
+    # navis stores the skeleton as a directed graph (child -> parent)
     G = neuron_skel.graph.to_undirected()
     node2density = _build_density_lookup(calculation_nodes)
 
@@ -71,7 +71,7 @@ def get_local_maximum(neuron_skel,
                 peak_cache[current] = current
                 return current
 
-            # pick neighbor with largest positive difference (same as argmax in your code)
+            # steepest ascent: neighbour with the largest density increase
             best_idx = int(diff.argmax())
             best_neighbor = int(neighbors[best_idx])
 
@@ -103,9 +103,6 @@ def find_peak_by_iteration(node: int, clusters: Dict[int, List[int]]) -> int:
     """
     Returns the peak node (original cluster id) by iterating over clusters_dict.
     If no peak is found, returns -1.
-    
-    This matches the behavior from dc_initial_algo.py where each node is mapped
-    to its corresponding peak node based on the clustering results.
     """
     for peak, nodes in clusters.items():
         if node in nodes:
@@ -117,16 +114,17 @@ def add_peak_node_to_calculation_nodes(calculation_nodes: pd.DataFrame,
                                      clusters: Dict[int, List[int]]) -> pd.DataFrame:
     """
     Add 'peak_node' column to calculation_nodes DataFrame.
-    Each node is mapped to its corresponding peak node from the clustering results.
+    Each node is mapped to the peak of its cluster; nodes in no cluster get -1.
     """
+    node_to_peak = {node: peak for peak, nodes in clusters.items() for node in nodes}
     df = calculation_nodes.copy()
-    df["peak_node"] = df["node_id"].apply(lambda node: find_peak_by_iteration(node, clusters))
+    df["peak_node"] = df["node_id"].map(node_to_peak).fillna(-1).astype(int)
     return df
 
 
 def summarize_clusters(clusters: Dict[int, List[int]]) -> dict:
     """
-    Return summary stats like you print in the notebook.
+    Summary statistics of a clustering result.
     """
     largest_peak = None
     largest_count = 0
