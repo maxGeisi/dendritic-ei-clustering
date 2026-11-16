@@ -23,7 +23,7 @@ def plot_node_synapse_counts(
     Visualize nodes with synapse counts, highlighting the node with maximum count.
     
     Args:
-        node_counts: Series with synapse counts per node (aligned with neuron_skel.nodes.index)
+        node_counts: Series with synapse counts per node, indexed by node_id
         neuron_skel: Navis neuron skeleton object
         config: Visualization configuration
         save_plot: Whether to save the plot to file
@@ -34,8 +34,9 @@ def plot_node_synapse_counts(
     colors = get_standard_colors()
     markers = get_standard_markers()
     
-    # Reindex node_counts to match neuron skeleton nodes
-    node_counts = node_counts.reindex(neuron_skel.nodes.index, fill_value=0)
+    # node_counts is indexed by node_id, so look nodes up by node_id as well
+    nodes_by_id = neuron_skel.nodes.set_index('node_id', drop=False)
+    node_counts = node_counts.reindex(nodes_by_id.index, fill_value=0)
     
     # Find nodes with synapses and maximum count
     nodes_above_zero = node_counts[node_counts > 0]
@@ -43,8 +44,8 @@ def plot_node_synapse_counts(
     max_node = node_counts.idxmax()
     
     # Get coordinates for nodes with synapses
-    nodes_to_plot = neuron_skel.nodes.loc[nodes_above_zero.index]
-    max_node_coord = neuron_skel.nodes.loc[max_node]
+    nodes_to_plot = nodes_by_id.loc[nodes_above_zero.index]
+    max_node_coord = nodes_by_id.loc[max_node]
     
     # Initialize 3D figure
     fig = go.Figure(layout=dict(
@@ -140,12 +141,13 @@ def plot_node_synapse_counts_simple(
     colors = get_standard_colors()
     markers = get_standard_markers()
     
-    # Reindex node_counts to match neuron skeleton nodes
-    node_counts = node_counts.reindex(neuron_skel.nodes.index, fill_value=0)
+    # node_counts is indexed by node_id, so look nodes up by node_id as well
+    nodes_by_id = neuron_skel.nodes.set_index('node_id', drop=False)
+    node_counts = node_counts.reindex(nodes_by_id.index, fill_value=0)
     
     # Find nodes with synapses
     nodes_above_zero = node_counts[node_counts > 0]
-    nodes_to_plot = neuron_skel.nodes.loc[nodes_above_zero.index]
+    nodes_to_plot = nodes_by_id.loc[nodes_above_zero.index]
     
     # Initialize 3D figure
     fig = go.Figure(layout=dict(
