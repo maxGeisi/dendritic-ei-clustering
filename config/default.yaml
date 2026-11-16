@@ -4,7 +4,7 @@ paths:
   base_data: "data"
   swc_dir: "data/microns/extracted_swc/SWC_Skel"
   syn_dir: "data/microns/extracted_swc/syn"
-  interim_results_dir: "data/microns/intirim_results" 
+  interim_results_dir: "data/microns/interim_results"
 
 input:
   neuron_id: "n3"
@@ -18,7 +18,13 @@ voxel_nm:
 
 analysis:
   sigma_um: 1.0
-  distance_mapping: true # <- set to false if you want the i to e mapping based on density gradient field
+  distance_mapping: true   # false: map I synapses to E clusters along the E-density gradient instead
+
+ei_labels:
+  excitatory_flag: 0        # value of isOnSpine that marks excitatory synapses in this export
+  pre_type_override: true   # known presynaptic cell type beats the spine flag; false = thesis rule
+  inhibitory_pre_types: ["PTC", "DTC", "STC", "ITC", "BC", "MC", "BPC", "NGC"]
+  excitatory_pre_types: ["23P", "4P", "5P-IT", "5P-ET", "5P-NP", "6P-IT", "6P-CT"]
 
 output:
   figures_dir: "figures"
