@@ -35,25 +35,23 @@ def map_synapses_to_nodes(
     # Get synapse coordinates
     synapse_coords = syn_df[list(coord_cols)].values
     
+    node_ids = skeleton_nodes['node_id'].to_numpy()
+
     if method == "kdtree":
-        # Use KDTree for efficient search
         tree = cKDTree(skeleton_coords)
         distances, indices = tree.query(synapse_coords)
-        closest_node_ids = skeleton_nodes.index[indices].values
     else:
-        # Brute force method (original implementation)
-        closest_node_ids = []
-        distances = []
-        for syn_xyz in synapse_coords:
-            diffs = skeleton_coords - syn_xyz
-            dists = np.sqrt((diffs**2).sum(axis=1))
-            min_idx = np.argmin(dists)
-            row = skeleton_nodes.iloc[min_idx]
-            node_id = row['node_id']
-            closest_node_ids.append(node_id)
-            distances.append(dists[min_idx])
-        distances = np.array(distances)
-    
+        # Brute force (original implementation). Same result as the KD-tree, O(N*M).
+        indices = np.empty(len(synapse_coords), dtype=int)
+        distances = np.empty(len(synapse_coords), dtype=float)
+        for k, syn_xyz in enumerate(synapse_coords):
+            dists = np.sqrt(((skeleton_coords - syn_xyz) ** 2).sum(axis=1))
+            indices[k] = np.argmin(dists)
+            distances[k] = dists[indices[k]]
+
+    # `indices` are row positions in the nodes table, not node IDs.
+    closest_node_ids = node_ids[indices]
+
     syn_df['closest_node_id'] = closest_node_ids
     syn_df['distance_to_node'] = distances
     
@@ -96,9 +94,10 @@ def create_node_counts_series(
         node_id_col: Column name containing node IDs
         
     Returns:
-        Series indexed by node_id with synapse counts
+        Series indexed by node_id with synapse counts (0 for nodes without synapses)
     """
     node_counts = syn_df[node_id_col].value_counts()
-    # Reindex to match neuron skeleton nodes, fill missing with 0
-    node_counts = node_counts.reindex(neuron_skel.nodes.index, fill_value=0)
+    # Index by node_id (not by the row index of the nodes table), zeros elsewhere
+    node_counts = node_counts.reindex(neuron_skel.nodes['node_id'], fill_value=0)
+    node_counts.index.name = 'node_id'
     return node_counts
